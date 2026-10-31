@@ -2,17 +2,18 @@
 
 // Gallery: upload each photo next to your other files and list it here by file name.
 const GALLERY = [
-  { src: "gallery-1.jpg", w: 1083, h: 1800, alt: "Goddess Jay in a pale blue fishnet bodysuit and clear heels, seated on a bench in front of a brick wall" },
-  { src: "gallery-2.jpg", w: 1350, h: 1800, alt: "Goddess Jay kneeling in a black latex nurse-style dress with pink trim and black stockings" },
-  { src: "gallery-3.jpg", w: 1301, h: 1800, alt: "Goddess Jay in a black latex nurse-style dress, glasses and stockings, posed against a brick wall" },
-  { src: "gallery-4.jpg", w: 1477, h: 1800, alt: "Goddess Jay in a sheer black top and glasses, lying on a couch and looking over her frames" },
-  { src: "gallery-5.jpg", w: 1334, h: 1800, alt: "Goddess Jay in a sheer black top and blue plaid skirt, lying on a couch with her heels in the air" },
-  { src: "gallery-6.jpg", w: 1371, h: 1800, alt: "Goddess Jay in glasses, a blue plaid two-piece and black stockings, seated on a bench" },
-  { src: "gallery-7.jpg", w: 1350, h: 1800, alt: "Goddess Jay in glasses, a blue plaid two-piece and lace-top stockings, seated on a bench" },
-  { src: "gallery-8.jpg", w: 1350, h: 1800, alt: "Close-up of Goddess Jay in a pale blue fishnet top with long black and blonde hair" },
-  { src: "gallery-9.jpg", w: 1350, h: 1800, alt: "Goddess Jay looking up at the camera in black and pink lingerie" }
-  // Add more like this (one line each, with a comma after the previous one):
-  // { src: "gallery-10.jpg", w: 1536, h: 2048, alt: "Goddess Jay" },
+  { src: "gallery-1.jpg", w: 962, h: 1600, alt: "Goddess Jay in a pale blue fishnet bodysuit, seated on a bench in front of a brick wall" },
+  { src: "gallery-2.jpg", w: 1200, h: 1600, alt: "Goddess Jay in a black latex nurse-style dress and stockings, kneeling on the floor" },
+  { src: "gallery-3.jpg", w: 1156, h: 1600, alt: "Goddess Jay in a black latex nurse-style dress with pink trim, glasses and stockings" },
+  { src: "gallery-4.jpg", w: 1312, h: 1600, alt: "Goddess Jay in glasses and a sheer black top, resting on a grey couch" },
+  { src: "gallery-5.jpg", w: 1186, h: 1600, alt: "Goddess Jay in a sheer black top and blue plaid skirt, lying on a grey couch" },
+  { src: "gallery-6.jpg", w: 1219, h: 1600, alt: "Goddess Jay in glasses, a blue plaid outfit and black stockings, seated on a bench" },
+  { src: "gallery-7.jpg", w: 1200, h: 1600, alt: "Goddess Jay in glasses and a blue plaid outfit, leaning on a bench against a brick wall" },
+  { src: "gallery-8.jpg", w: 1200, h: 1600, alt: "Close-up of Goddess Jay in a pale blue fishnet top with long black and blonde hair" },
+  { src: "gallery-9.jpg", w: 1200, h: 1600, alt: "Goddess Jay looking up with her tongue out, in front of a brick wall" }
+  // Add more like this (one line each, with a comma after the previous one).
+  // w and h are the photo's width and height in pixels (right-click the file > Properties/Get Info):
+  // { src: "gallery-10.jpg", w: 1200, h: 1600, alt: "Goddess Jay" },
 ];
 
 /* ===== SITE LOGIC ===== */
@@ -31,17 +32,34 @@ if (enterBtn) enterBtn.addEventListener("click", () => {
 });
 
 if (document.getElementById("galleryGrid")) {
-// Gallery
+// Gallery: every photo shows in full (no cropping). Space is reserved from each photo's w/h,
+// and photos are split into columns by JS so it looks the same on Safari, Chrome and Firefox.
 const lightbox = document.getElementById("lightbox");
 const lbImg = lightbox.querySelector("img");
-document.getElementById("galleryGrid").classList.toggle("few", GALLERY.length < 3);
-document.getElementById("galleryGrid").innerHTML = GALLERY.map((p, i) =>
-  p.src
-    ? `<button class="tile" type="button" data-i="${i}" aria-label="Open photo ${i + 1}"><img src="${p.src}" alt="${p.alt}"${p.w ? ` width="${p.w}" height="${p.h}"` : ""} loading="lazy" decoding="async"></button>`
-    : `<div class="tile ph" role="img" aria-label="Photo placeholder ${i + 1}">${icon("heartlock")}</div>`
-).join("");
+const grid = document.getElementById("galleryGrid");
 
-document.getElementById("galleryGrid").addEventListener("click", (e) => {
+const tileHTML = (p, i) => p.src
+  ? `<button class="tile" type="button" data-i="${i}" aria-label="Open photo ${i + 1}"><span class="ratio" style="padding-top:${((p.h && p.w ? p.h / p.w : 4 / 3) * 100).toFixed(3)}%"><img src="${p.src}" alt="${p.alt}"${p.w && p.h ? ` width="${p.w}" height="${p.h}"` : ""} loading="lazy" decoding="async"></span></button>`
+  : `<div class="tile ph" role="img" aria-label="Photo placeholder ${i + 1}">${icon("heartlock")}</div>`;
+
+let galleryCols = 0;
+const renderGallery = () => {
+  const cols = Math.max(1, Math.min(GALLERY.length, window.matchMedia("(max-width: 900px)").matches ? 2 : 3));
+  if (cols === galleryCols) return;
+  galleryCols = cols;
+  const parts = Array.from({ length: cols }, () => ({ html: "", h: 0 }));
+  GALLERY.forEach((p, i) => {
+    let t = parts[0];
+    parts.forEach((c) => { if (c.h < t.h) t = c; });
+    t.html += tileHTML(p, i);
+    t.h += p.h && p.w ? p.h / p.w : 4 / 3;
+  });
+  grid.innerHTML = parts.map((c) => `<div class="gcol">${c.html}</div>`).join("");
+};
+renderGallery();
+window.addEventListener("resize", renderGallery);
+
+grid.addEventListener("click", (e) => {
   const tile = e.target.closest("button.tile");
   if (!tile) return;
   const p = GALLERY[tile.dataset.i];
